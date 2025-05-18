@@ -43,7 +43,9 @@ export interface QuizResult {
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export const QUESTION_TYPES = ['multiple'] as const;
 
-export const isDifficulty = (value: any): value is 'easy' | 'medium' | 'hard' =>
+export type Difficulty = typeof DIFFICULTIES[number];
+
+export const isDifficulty = (value: any): value is Difficulty =>
   DIFFICULTIES.includes(value);
 
 export const isValidQuestionType = (value: any): value is 'multiple' =>

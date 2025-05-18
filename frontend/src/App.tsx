@@ -1,24 +1,32 @@
 import React, { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './store';
 import { fetchCategories, clearError } from './store/quizSlice';
-import { selectQuizStatus, selectLoading, selectError } from './store/selectors';
+import { 
+  selectQuizStatus, 
+  selectLoading, 
+  selectError,
+  selectCategories 
+} from './store/selectors';
 import { CategorySelector } from './components/CategorySelector';
 import { QuizContainer } from './components/QuizContainer';
 import { QuizResults } from './components/QuizResults';
 import { LoadingSpinner, ErrorMessage } from './components/utility-components';
 import './App.css';
 
-export const App: React.FC = () => {
+const App: React.FC = () => {
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectQuizStatus);
   const loading = useAppSelector(selectLoading);
   const error = useAppSelector(selectError);
+  const categories = useAppSelector(selectCategories);
 
   useEffect(() => {
-    dispatch(fetchCategories());
-  }, [dispatch]);
+    // Only fetch categories when status is 'idle' or categories array is empty
+    if (status === 'idle' || (status === 'selecting' && categories.length === 0)) {
+      dispatch(fetchCategories());
+    }
+  }, [dispatch, status, categories.length]);
 
-  // Clean component rendering using object mapping instead of if/else
   const ComponentMap = {
     idle: LoadingSpinner,
     selecting: CategorySelector,

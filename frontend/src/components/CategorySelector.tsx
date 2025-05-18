@@ -1,7 +1,14 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '../store';
-import { setSelectedCategory, setSelectedDifficulty, setQuestionCount, fetchQuiz } from '../store/quizSlice';
-import { selectCategories, selectSelectedCategory, selectSelectedDifficulty, selectQuestionCount, selectLoading } from '../store/selectors';
+import { setSelectedCategory, setSelectedDifficulty, setQuestionCount, fetchQuiz, clearError } from '../store/quizSlice';
+import { 
+  selectCategories, 
+  selectSelectedCategory, 
+  selectSelectedDifficulty, 
+  selectQuestionCount, 
+  selectLoading, 
+  selectError 
+} from '../store/selectors';
 import { Difficulty } from '../types';
 
 export const CategorySelector: React.FC = () => {
@@ -11,8 +18,8 @@ export const CategorySelector: React.FC = () => {
   const selectedDifficulty = useAppSelector(selectSelectedDifficulty);
   const questionCount = useAppSelector(selectQuestionCount);
   const loading = useAppSelector(selectLoading);
+  const errorMessage = useAppSelector(selectError);  // Renamed to avoid confusion
 
-  // Clean, declarative handlers
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     dispatch(setSelectedCategory(parseInt(e.target.value)));
   };
@@ -35,8 +42,22 @@ export const CategorySelector: React.FC = () => {
     }
   };
 
-  // Clean validation using ternary
-  const canStartQuiz = selectedCategory && !loading;
+  if (errorMessage) {
+    return (
+      <div className="category-selector">
+        <h2>Error</h2>
+        <p className="error-message">{errorMessage}</p>
+        <button 
+          onClick={() => dispatch(clearError())}
+          className="start-quiz-btn"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  const canStartQuiz = selectedCategory !== null && !loading;
 
   return (
     <div className="category-selector">

@@ -5,6 +5,7 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   question: string;
   incorrect_answers: string[];
+  // Note: correct_answer is not included in frontend types for security
 }
 
 export interface Category {

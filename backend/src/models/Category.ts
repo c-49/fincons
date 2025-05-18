@@ -1,7 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { Category as ICategory } from '../types';
 
-interface CategoryDocument extends ICategory, Document {}
+// Use Omit to avoid conflict between Document _id and Category id
+type CategoryDocument = Document & Omit<ICategory, 'id'>;
 
 const categorySchema = new Schema<CategoryDocument>({
   id: { type: Number, required: true, unique: true },

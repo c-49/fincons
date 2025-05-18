@@ -14,7 +14,6 @@ export const QuizResults: React.FC = () => {
 
   if (!result) return null;
 
-  // Clean score percentage calculation
   const scorePercentage = Math.round((result.score / result.total) * 100);
 
   return (

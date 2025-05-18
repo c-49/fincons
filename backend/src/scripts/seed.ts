@@ -1,11 +1,12 @@
 import axios from 'axios';
-import { DatabaseConnection } from '../src/database/connection';
-import { QuestionModel } from '../src/models/Question';
-import { CategoryModel } from '../src/models/Category';
-import { Question, Category } from '../src/types';
+import { DatabaseConnection } from '../database/connection';
+import { QuestionModel } from '../models/Question';
+import { CategoryModel } from '../models/Category';
+import { Question, Category } from '../types';
 
 class DatabaseSeeder {
   private db = DatabaseConnection.getInstance();
+  private categoriesWithQuestions: number[] = [];
 
   async seed(): Promise<void> {
     console.log('🌱 Starting database seeding...');
@@ -15,6 +16,8 @@ class DatabaseSeeder {
       await this.clearDatabase();
       await this.seedCategories();
       await this.seedQuestions();
+      // Update categories to only keep those with questions
+      await this.updateCategories();
       console.log('✅ Database seeding completed successfully!');
     } catch (error) {
       console.error('❌ Seeding failed:', error);
@@ -52,24 +55,32 @@ class DatabaseSeeder {
     let totalQuestions = 0;
 
     for (const category of categories) {
+      let hasQuestions = false;
+      
       for (const difficulty of difficulties) {
         try {
           const url = `https://opentdb.com/api.php?amount=50&category=${category.id}&difficulty=${difficulty}&type=multiple`;
           const response = await axios.get(url);
           
-          const questions: Question[] = response.data.results.map((q: any) => ({
-            category: category.id,
-            type: 'multiple',
-            difficulty,
-            question: this.decodeHtml(q.question),
-            correct_answer: this.decodeHtml(q.correct_answer),
-            incorrect_answers: q.incorrect_answers.map((a: string) => this.decodeHtml(a))
-          }));
+          // Check if we received valid questions
+          if (response.data.response_code === 0 && response.data.results.length > 0) {
+            const questions: Question[] = response.data.results.map((q: any) => ({
+              category: category.id,
+              type: 'multiple',
+              difficulty,
+              question: this.decodeHtml(q.question),
+              correct_answer: this.decodeHtml(q.correct_answer),
+              incorrect_answers: q.incorrect_answers.map((a: string) => this.decodeHtml(a))
+            }));
 
-          if (questions.length > 0) {
             await QuestionModel.insertMany(questions);
             totalQuestions += questions.length;
             console.log(`  📝 ${category.name} (${difficulty}): ${questions.length} questions`);
+            
+            // Mark this category as having questions
+            hasQuestions = true;
+          } else {
+            console.warn(`⚠️  No questions available for ${category.name} (${difficulty})`);
           }
 
           // Rate limiting to avoid overwhelming the API
@@ -78,9 +89,33 @@ class DatabaseSeeder {
           console.warn(`⚠️  Failed to fetch questions for ${category.name} (${difficulty})`);
         }
       }
+      
+      // Add category ID to our list if it has questions
+      if (hasQuestions) {
+        this.categoriesWithQuestions.push(category.id);
+      }
     }
 
     console.log(`🎯 Total questions inserted: ${totalQuestions}`);
+    console.log(`🗂️  Categories with questions: ${this.categoriesWithQuestions.length} of ${categories.length}`);
+  }
+
+  private async updateCategories(): Promise<void> {
+    console.log('🔄 Updating categories to only include those with questions...');
+    
+    // Delete categories that don't have any questions
+    const result = await CategoryModel.deleteMany({ 
+      id: { $nin: this.categoriesWithQuestions } 
+    });
+    
+    console.log(`🗑️  Removed ${result.deletedCount} categories without questions`);
+    
+    // Log the remaining categories
+    const remainingCategories = await CategoryModel.find().lean();
+    console.log(`📊 Remaining categories: ${remainingCategories.length}`);
+    remainingCategories.forEach(cat => {
+      console.log(`  - ${cat.name} (ID: ${cat.id})`);
+    });
   }
 
   private decodeHtml(html: string): string {

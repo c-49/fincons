@@ -31,7 +31,15 @@ export class QuizController {
     try {
       const questions = await this.questionService.getQuestionsByQuery(validatedQuery);
       
-      // Remove correct answers from response (security requirement)
+      // Check if we have enough questions
+      if (questions.length < validatedQuery.amount) {
+        res.status(404).json({
+          success: false,
+          error: `Not enough questions available for this category and difficulty. Found ${questions.length} of ${validatedQuery.amount} required.`
+        });
+        return;
+      }
+      
       const sanitizedQuestions = questions.map(({ correct_answer, ...question }) => question);
       
       res.json({ success: true, data: sanitizedQuestions });

@@ -2,6 +2,7 @@ import { QuestionModel } from '../models/Question';
 import { Question, QuizQuery, QuizResult, QuizSubmission } from '../types';
 
 export class QuestionService {
+  // Clean, functional approach - no complex conditionals
   async getQuestionsByQuery(query: QuizQuery): Promise<Question[]> {
     const questions = await QuestionModel
       .aggregate([
@@ -25,8 +26,10 @@ export class QuestionService {
   };
 
   async calculateScore(submission: QuizSubmission): Promise<QuizResult> {
+    const questionIds = submission.answers.map(a => a.questionId);
     const questions = await QuestionModel
-      .find({ _id: { $in: submission.answers.map(a => a.questionId) } })
+      .find({ _id: { $in: questionIds } })
+      .lean()
       .exec();
 
     const questionMap = new Map(questions.map(q => [q._id!.toString(), q]));

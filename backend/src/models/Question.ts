@@ -1,8 +1,8 @@
-// backend/src/models/Question.ts
 import mongoose, { Document, Schema } from 'mongoose';
 import { Question as IQuestion } from '../types';
 
-interface QuestionDocument extends IQuestion, Document {}
+// Extract _id from Document to avoid collision with Question's optional _id
+type QuestionDocument = Document & Omit<IQuestion, '_id'>;
 
 const questionSchema = new Schema<QuestionDocument>({
   category: { type: Number, required: true },

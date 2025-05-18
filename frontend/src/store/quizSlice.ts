@@ -66,11 +66,12 @@ const quizSlice = createSlice({
       state.answers[action.payload.questionId] = action.payload.answer;
     },
     resetQuiz: (state) => {
-      state.status = 'idle';
+      state.status = 'selecting';
       state.questions = [];
       state.answers = {};
       state.result = null;
       state.error = null;
+      state.loading = false;
     },
     clearError: (state) => {
       state.error = null;

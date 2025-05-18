@@ -23,7 +23,17 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/trivia
       - PORT=3001
     restart: always
-    command: sh -c "npm run seed && npm start"
+    # Wait for MongoDB to be ready before starting the application
+    command: >
+      sh -c "
+        echo 'Waiting for MongoDB to be ready...' &&
+        while ! nc -z mongodb 27017; do
+          sleep 1
+        done &&
+        echo 'MongoDB is ready!' &&
+        npm run seed &&
+        npm start
+      "
 
   frontend:
     build:
